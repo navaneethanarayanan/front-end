@@ -1,0 +1,104 @@
+[33mcommit a5360c79ce6f4c75d89ab3c5fae17540dec7fe5e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfront[m[33m, [m[1;31morigin/front[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 16:02:39 2026 +0530
+
+    Add Jenkinsfile to front branch
+
+[33mcommit f728345c36266325c1a37114b4211bd6c1f20f8a[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 15:51:04 2026 +0530
+
+    Fix Docker-in-Docker configuration for Kubernetes Jenkins pipeline
+
+[33mcommit 9f46f0ba557d38eb838d9a83d826140936fc5624[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 15:47:52 2026 +0530
+
+    Fix Docker-in-Docker configuration for Kubernetes Jenkins pipeline
+
+[33mcommit 392f2ba5da536d97701789a34d6c10878fe2e475[m
+Author: navaneethanarayanan <navaneethanarayanan0@example.com>
+Date:   Fri Aug 7 09:51:03 2026 +0000
+
+    Add React source files
+
+[33mcommit a8b39cb4ec167d58835bfbcf4c3a748351b5a90f[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 14:32:54 2026 +0530
+
+    Fix Jenkins Kubernetes CI/CD pipeline
+
+[33mcommit 170f9e360ebb7e262a60ed38286f7fb883fb71f8[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 13:10:05 2026 +0530
+
+    docker crt
+
+[33mcommit ee0ebe896ea62e7b800ea93909bd5a18dff556b6[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 11:12:22 2026 +0530
+
+    add complete kubernetes ci cd pipeline
+
+[33mcommit 8fb084c69d474493108c59faad6b925201370f5b[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 10:58:42 2026 +0530
+
+    fix jenkins checkout stage
+
+[33mcommit b155c7037889c8c40ab2ad1a44cd238d49c11234[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 10:48:42 2026 +0530
+
+    checkout
+
+[33mcommit 5bae51c0ecfd221f402ecbf6535ba88a73b879f3[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 10:24:41 2026 +0530
+
+    jenkins
+
+[33mcommit 95491ae3120a02cf8bdf8d5233f2cde802c7bc99[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 10:21:15 2026 +0530
+
+    Added allfile
+
+[33mcommit fb5a9b9ef74ffe205f097df5fbc10e123e0762e5[m
+Author: navaneethan <navaneethanarayanan0@gmail.com>
+Date:   Fri Aug 7 10:20:46 2026 +0530
+
+    Added Dockerfile
+
+[33mcommit ee47b3ab352d3b7ee13a7622ae485dc87a068e49[m[33m ([m[1;31mupstream/main[m[33m, [m[1;31mupstream/HEAD[m[33m)[m
+Author: nishika841 <nishikaupadhyay89@gmail.com>
+Date:   Sun Apr 13 13:25:01 2025 +0530
+
+    Update README.md
+    
+    README.md
+
+[33mcommit e0a957142d621ca448242e5591e40dc788f6d909[m
+Author: nishika841 <nishikaupadhyay89@gmail.com>
+Date:   Sun Apr 13 13:01:12 2025 +0530
+
+    Add files via upload
+
+[33mcommit eee6b96db9c160c945125687c7f706d35e895428[m
+Merge: 2d875cb 821b242
+Author: nishika841 <nishikaupadhyay89@gmail.com>
+Date:   Sun Apr 13 12:35:57 2025 +0530
+
+    Initial commit
+
+[33mcommit 2d875cbb939975988676cf41068c623c5067d7fc[m
+Author: nishika841 <nishikaupadhyay89@gmail.com>
+Date:   Sun Apr 13 12:30:37 2025 +0530
+
+    Initial commit
+
+[33mcommit 821b2424f3a346de5f21b18500cf192275566bad[m
+Author: nishika841 <nishikaupadhyay89@gmail.com>
+Date:   Sun Apr 13 11:55:22 2025 +0530
+
+    Initial commit
