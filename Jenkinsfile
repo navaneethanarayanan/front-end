@@ -11,25 +11,7 @@ pipeline {
         DOCKER_CREDENTIALS = "dockerhub-creds"
 
     }
-
-
-    stages {
-
-
-        stage('Checkout Code') {
-
-            steps {
-
-                echo "Cloning GitHub Repository"
-
-                git branch: 'main',
-                    url: 'https://github.com/your-username/your-repo.git'
-
-            }
-        }
-
-
-
+       stages {
         stage('Install Dependencies') {
 
             steps {
