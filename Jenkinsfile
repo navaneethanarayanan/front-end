@@ -1,27 +1,22 @@
 pipeline {
 
-    agent any
+    agent {
+        label 'dind-agent'
+    }
 
 
     environment {
 
-        DOCKER_IMAGE = "your-dockerhub-username/gen-ai-project"
+        DOCKER_IMAGE = "navaneethanarayanan/gen-ai-project"
         IMAGE_TAG = "${BUILD_NUMBER}"
-
         DOCKER_CREDENTIALS = "dockerhub-creds"
 
     }
-       stages {
-        stage('Checkout Code') {
 
-            steps {
 
-                git(
-                    branch: 'main',
-                    url: 'https://github.com/navaneethanarayanan/front-end.git'
-                )
+    stages {
 
-            }
+
         stage('Install Dependencies') {
 
             steps {
@@ -33,6 +28,7 @@ pipeline {
                 '''
 
             }
+
         }
 
 
@@ -41,13 +37,14 @@ pipeline {
 
             steps {
 
-                echo "Building Vite Application"
+                echo "Building React Application"
 
                 sh '''
                     npm run build
                 '''
 
             }
+
         }
 
 
@@ -58,14 +55,15 @@ pipeline {
 
                 echo "Building Docker Image"
 
-                sh """
+                sh '''
 
-                docker build \
-                -t ${DOCKER_IMAGE}:${IMAGE_TAG} .
+                    docker build \
+                    -t ${DOCKER_IMAGE}:${IMAGE_TAG} .
 
-                """
+                '''
 
             }
+
         }
 
 
@@ -78,11 +76,13 @@ pipeline {
 
 
                 withCredentials([
+
                     usernamePassword(
-                    credentialsId: "${DOCKER_CREDENTIALS}",
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                        credentialsId: "${DOCKER_CREDENTIALS}",
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
                     )
+
                 ]) {
 
 
@@ -106,13 +106,32 @@ pipeline {
 
 
 
-        stage('Deploy to Kubernetes') {
-
+        stage('Update Kubernetes Image') {
 
             steps {
 
+                echo "Updating Kubernetes Deployment Image"
 
-                echo "Deploying Application"
+
+                sh '''
+
+                kubectl set image deployment/gen-ai-project \
+                gen-ai-project=${DOCKER_IMAGE}:${IMAGE_TAG}
+
+
+                '''
+
+            }
+
+        }
+
+
+
+        stage('Deploy to Kubernetes') {
+
+            steps {
+
+                echo "Deploying Application to Kubernetes"
 
 
                 sh '''
@@ -141,18 +160,26 @@ pipeline {
 
         success {
 
-            echo "✅ Deployment Successful"
+            echo "✅ CI/CD Pipeline Completed Successfully"
 
         }
 
 
         failure {
 
-            echo "❌ Pipeline Failed"
+            echo "❌ CI/CD Pipeline Failed"
+
+        }
+
+
+        always {
+
+            echo "Pipeline Execution Completed"
 
         }
 
 
     }
+
 
 }
