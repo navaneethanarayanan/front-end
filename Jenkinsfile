@@ -7,7 +7,7 @@ pipeline {
 
     environment {
 
-        DOCKER_IMAGE = "navaneethanarayanan/gen-ai-project"
+        DOCKER_IMAGE = "navanee143/gen-ai-project"
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS = "dockerhub-creds"
 
