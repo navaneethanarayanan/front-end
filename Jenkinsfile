@@ -1,9 +1,63 @@
 pipeline {
 
     agent {
-        label 'dind-agent'
-    }
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: dind-agent
 
+spec:
+  containers:
+
+    - name: node
+      image: node:22
+      command:
+        - cat
+      tty: true
+      workingDir: /home/jenkins/agent
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+
+    - name: dind-daemon
+      image: docker:29.3.0-dind
+      securityContext:
+        privileged: true
+      args:
+        - "--host=tcp://0.0.0.0:2376"
+        - "--host=unix:///var/run/docker.sock"
+        - "--insecure-registry=nexus.shaktidb.iitmpravartak.net"
+        - "--insecure-registry=sbomsandbox.shaktidb.iitmpravartak.net"
+      env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+      volumeMounts:
+        - name: dind-storage
+          mountPath: /var/lib/docker
+
+    - name: jnlp
+      image: nexus.shaktidb.iitmpravartak.net/repository/baseimage/jenkinsdindagent:29.3.0
+      env:
+        - name: DOCKER_HOST
+          value: tcp://localhost:2376
+      workingDir: /home/jenkins/agent
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+
+  volumes:
+
+    - name: dind-storage
+      emptyDir: {}
+
+    - name: workspace-volume
+      emptyDir: {}
+'''
+        }
+    }
 
     environment {
 
@@ -13,89 +67,20 @@ pipeline {
 
     }
 
-
     stages {
 
-
-        stage('Install Dependencies') {
-
-            steps {
-
-                echo "Installing Node Dependencies"
-
-                sh '''
-                    npm install
-                '''
-
-            }
-
-        }
-
-
-
-        stage('Build React Application') {
+        stage('Check Node') {
 
             steps {
 
-                echo "Building React Application"
-
-                sh '''
-                    npm run build
-                '''
-
-            }
-
-        }
-
-
-
-        stage('Docker Build') {
-
-            steps {
-
-                echo "Building Docker Image"
-
-                sh '''
-
-                    docker build \
-                    -t ${DOCKER_IMAGE}:${IMAGE_TAG} .
-
-                '''
-
-            }
-
-        }
-
-
-
-        stage('Docker Login & Push') {
-
-            steps {
-
-                echo "Pushing Image to Docker Hub"
-
-
-                withCredentials([
-
-                    usernamePassword(
-                        credentialsId: "${DOCKER_CREDENTIALS}",
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-
-                ]) {
-
+                container('node') {
 
                     sh '''
+                        echo "Node Version:"
+                        node --version
 
-                    echo $DOCKER_PASS | docker login \
-                    -u $DOCKER_USER \
-                    --password-stdin
-
-
-                    docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
-
-
+                        echo "NPM Version:"
+                        npm --version
                     '''
 
                 }
@@ -104,59 +89,139 @@ pipeline {
 
         }
 
+        stage('Install Dependencies') {
 
+            steps {
+
+                container('node') {
+
+                    echo "Installing Node Dependencies"
+
+                    sh '''
+                        npm install
+                    '''
+
+                }
+
+            }
+
+        }
+
+        stage('Build React Application') {
+
+            steps {
+
+                container('node') {
+
+                    echo "Building React Application"
+
+                    sh '''
+                        npm run build
+                    '''
+
+                }
+
+            }
+
+        }
+
+        stage('Docker Build') {
+
+            steps {
+
+                container('jnlp') {
+
+                    echo "Building Docker Image"
+
+                    sh '''
+                        docker version
+
+                        docker build \
+                        -t ${DOCKER_IMAGE}:${IMAGE_TAG} .
+                    '''
+
+                }
+
+            }
+
+        }
+
+        stage('Docker Login & Push') {
+
+            steps {
+
+                container('jnlp') {
+
+                    echo "Pushing Image to Docker Hub"
+
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: "${DOCKER_CREDENTIALS}",
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )
+                    ]) {
+
+                        sh '''
+                            echo "$DOCKER_PASS" | docker login \
+                            -u "$DOCKER_USER" \
+                            --password-stdin
+
+                            docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
+                        '''
+
+                    }
+
+                }
+
+            }
+
+        }
 
         stage('Update Kubernetes Image') {
 
             steps {
 
-                echo "Updating Kubernetes Deployment Image"
+                container('jnlp') {
 
+                    echo "Updating Kubernetes Deployment Image"
 
-                sh '''
+                    sh '''
+                        kubectl set image deployment/gen-ai-project \
+                        gen-ai-project=${DOCKER_IMAGE}:${IMAGE_TAG}
+                    '''
 
-                kubectl set image deployment/gen-ai-project \
-                gen-ai-project=${DOCKER_IMAGE}:${IMAGE_TAG}
-
-
-                '''
+                }
 
             }
 
         }
-
-
 
         stage('Deploy to Kubernetes') {
 
             steps {
 
-                echo "Deploying Application to Kubernetes"
+                container('jnlp') {
 
+                    echo "Deploying Application to Kubernetes"
 
-                sh '''
+                    sh '''
+                        kubectl apply -f k8s/deployment.yaml
 
-                kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
 
-                kubectl apply -f k8s/service.yaml
+                        kubectl rollout status deployment/gen-ai-project
+                    '''
 
-
-                kubectl rollout status deployment/gen-ai-project
-
-
-                '''
+                }
 
             }
 
         }
 
-
     }
 
-
-
     post {
-
 
         success {
 
@@ -164,13 +229,11 @@ pipeline {
 
         }
 
-
         failure {
 
             echo "❌ CI/CD Pipeline Failed"
 
         }
-
 
         always {
 
@@ -178,8 +241,6 @@ pipeline {
 
         }
 
-
     }
-
 
 }
