@@ -65,9 +65,9 @@ spec:
       mountPath: /var/lib/docker
 
 
-  # kubectl Container
+  # kubectl Container (runs as root - avoids workspace permission issues)
   - name: kubectl
-    image: bitnami/kubectl:latest
+    image: alpine/k8s:1.31.0
     command:
     - cat
     tty: true
