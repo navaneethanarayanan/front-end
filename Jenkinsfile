@@ -1,60 +1,89 @@
 pipeline {
-
     agent {
         kubernetes {
             yaml '''
 apiVersion: v1
 kind: Pod
+
 metadata:
   labels:
     app: dind-agent
 
 spec:
+
   containers:
 
-    - name: node
-      image: node:22
-      command:
-        - cat
-      tty: true
-      workingDir: /home/jenkins/agent
-      volumeMounts:
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
+  # React / Node.js Container
+  - name: node
+    image: node:22
+    command:
+    - cat
+    tty: true
+    workingDir: /home/jenkins/agent
 
-    - name: dind-daemon
-      image: docker:29.3.0-dind
-      securityContext:
-        privileged: true
-      args:
-        - "--host=tcp://0.0.0.0:2376"
-        - "--host=unix:///var/run/docker.sock"
-        - "--insecure-registry=nexus.shaktidb.iitmpravartak.net"
-        - "--insecure-registry=sbomsandbox.shaktidb.iitmpravartak.net"
-      env:
-        - name: DOCKER_TLS_CERTDIR
-          value: ""
-      volumeMounts:
-        - name: dind-storage
-          mountPath: /var/lib/docker
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /home/jenkins/agent
 
-    - name: jnlp
-      image: nexus.shaktidb.iitmpravartak.net/repository/baseimage/jenkinsdindagent:29.3.0
-      env:
-        - name: DOCKER_HOST
-          value: tcp://localhost:2376
-      workingDir: /home/jenkins/agent
-      volumeMounts:
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
+
+  # Docker CLI Container
+  - name: docker
+    image: docker:29.3.0-cli
+    command:
+    - cat
+    tty: true
+    workingDir: /home/jenkins/agent
+
+    env:
+    - name: DOCKER_HOST
+      value: tcp://localhost:2376
+
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /home/jenkins/agent
+
+
+  # Docker-in-Docker Daemon
+  - name: dind
+    image: docker:29.3.0-dind
+
+    securityContext:
+      privileged: true
+
+    command:
+    - dockerd
+
+    args:
+    - "--host=tcp://0.0.0.0:2376"
+
+    env:
+    - name: DOCKER_TLS_CERTDIR
+      value: ""
+
+    volumeMounts:
+    - name: dind-storage
+      mountPath: /var/lib/docker
+
+
+  # Jenkins Agent
+  - name: jnlp
+    image: jenkins/inbound-agent:latest
+
+    workingDir: /home/jenkins/agent
+
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /home/jenkins/agent
+
 
   volumes:
 
-    - name: dind-storage
-      emptyDir: {}
+  - name: dind-storage
+    emptyDir: {}
 
-    - name: workspace-volume
-      emptyDir: {}
+  - name: workspace-volume
+    emptyDir: {}
+
 '''
         }
     }
@@ -67,7 +96,9 @@ spec:
 
     }
 
+
     stages {
+
 
         stage('Check Node') {
 
@@ -76,11 +107,11 @@ spec:
                 container('node') {
 
                     sh '''
-                        echo "Node Version:"
-                        node --version
+                    echo "Node Version"
+                    node --version
 
-                        echo "NPM Version:"
-                        npm --version
+                    echo "NPM Version"
+                    npm --version
                     '''
 
                 }
@@ -88,6 +119,7 @@ spec:
             }
 
         }
+
 
         stage('Install Dependencies') {
 
@@ -98,7 +130,7 @@ spec:
                     echo "Installing Node Dependencies"
 
                     sh '''
-                        npm install
+                    npm install
                     '''
 
                 }
@@ -106,6 +138,7 @@ spec:
             }
 
         }
+
 
         stage('Build React Application') {
 
@@ -116,7 +149,7 @@ spec:
                     echo "Building React Application"
 
                     sh '''
-                        npm run build
+                    npm run build
                     '''
 
                 }
@@ -124,20 +157,43 @@ spec:
             }
 
         }
+
+
+        stage('Check Docker Connection') {
+
+            steps {
+
+                container('docker') {
+
+                    sh '''
+                    echo "Checking Docker"
+
+                    for i in $(seq 1 10); do
+                        docker version && break
+                        echo "Waiting for dind daemon to be ready..."
+                        sleep 3
+                    done
+                    '''
+
+                }
+
+            }
+
+        }
+
+
 
         stage('Docker Build') {
 
             steps {
 
-                container('jnlp') {
+                container('docker') {
 
                     echo "Building Docker Image"
 
                     sh '''
-                        docker version
-
-                        docker build \
-                        -t ${DOCKER_IMAGE}:${IMAGE_TAG} .
+                    docker build \
+                    -t ${DOCKER_IMAGE}:${IMAGE_TAG} .
                     '''
 
                 }
@@ -146,28 +202,35 @@ spec:
 
         }
 
+
+
         stage('Docker Login & Push') {
 
             steps {
 
-                container('jnlp') {
+                container('docker') {
 
-                    echo "Pushing Image to Docker Hub"
 
                     withCredentials([
+
                         usernamePassword(
                             credentialsId: "${DOCKER_CREDENTIALS}",
                             usernameVariable: 'DOCKER_USER',
                             passwordVariable: 'DOCKER_PASS'
                         )
+
                     ]) {
 
-                        sh '''
-                            echo "$DOCKER_PASS" | docker login \
-                            -u "$DOCKER_USER" \
-                            --password-stdin
 
-                            docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
+                        sh '''
+
+                        echo "$DOCKER_PASS" | docker login \
+                        -u "$DOCKER_USER" \
+                        --password-stdin
+
+
+                        docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
+
                         '''
 
                     }
@@ -178,17 +241,19 @@ spec:
 
         }
 
+
+
         stage('Update Kubernetes Image') {
 
             steps {
 
                 container('jnlp') {
 
-                    echo "Updating Kubernetes Deployment Image"
-
                     sh '''
-                        kubectl set image deployment/gen-ai-project \
-                        gen-ai-project=${DOCKER_IMAGE}:${IMAGE_TAG}
+
+                    kubectl set image deployment/gen-ai-project \
+                    gen-ai-project=${DOCKER_IMAGE}:${IMAGE_TAG}
+
                     '''
 
                 }
@@ -197,20 +262,24 @@ spec:
 
         }
 
-        stage('Deploy to Kubernetes') {
+
+
+        stage('Deploy Kubernetes') {
 
             steps {
 
                 container('jnlp') {
 
-                    echo "Deploying Application to Kubernetes"
-
                     sh '''
-                        kubectl apply -f k8s/deployment.yaml
 
-                        kubectl apply -f k8s/service.yaml
+                    kubectl apply -f k8s/deployment.yaml
 
-                        kubectl rollout status deployment/gen-ai-project
+                    kubectl apply -f k8s/service.yaml
+
+
+                    kubectl rollout status \
+                    deployment/gen-ai-project
+
                     '''
 
                 }
@@ -219,27 +288,34 @@ spec:
 
         }
 
+
     }
+
+
 
     post {
 
+
         success {
 
-            echo "✅ CI/CD Pipeline Completed Successfully"
+            echo " CI/CD Pipeline Completed Successfully"
 
         }
+
 
         failure {
 
-            echo "❌ CI/CD Pipeline Failed"
+            echo "CI/CD Pipeline Failed"
 
         }
+
 
         always {
 
             echo "Pipeline Execution Completed"
 
         }
+
 
     }
 
