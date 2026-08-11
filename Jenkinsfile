@@ -65,7 +65,7 @@ spec:
       mountPath: /var/lib/docker
 
 
-  # kubectl Container (runs as root - avoids workspace permission issues)
+  # kubectl Container
   - name: kubectl
     image: alpine/k8s:1.31.0
     command:
@@ -106,6 +106,7 @@ spec:
         DOCKER_IMAGE = "navanee143/gen-ai-project"
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS = "dockerhub-creds"
+        K8S_NAMESPACE = "default"   // <-- set this to match the RBAC namespace above
 
     }
 
@@ -265,7 +266,8 @@ spec:
                     sh '''
 
                     kubectl set image deployment/gen-ai-project \
-                    gen-ai-project=${DOCKER_IMAGE}:${IMAGE_TAG}
+                    gen-ai-project=${DOCKER_IMAGE}:${IMAGE_TAG} \
+                    -n ${K8S_NAMESPACE}
 
                     '''
 
@@ -285,13 +287,14 @@ spec:
 
                     sh '''
 
-                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/deployment.yaml -n ${K8S_NAMESPACE}
 
-                    kubectl apply -f k8s/service.yaml
+                    kubectl apply -f k8s/service.yaml -n ${K8S_NAMESPACE}
 
 
                     kubectl rollout status \
-                    deployment/gen-ai-project
+                    deployment/gen-ai-project \
+                    -n ${K8S_NAMESPACE}
 
                     '''
 
