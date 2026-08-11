@@ -65,6 +65,19 @@ spec:
       mountPath: /var/lib/docker
 
 
+  # kubectl Container
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+    workingDir: /home/jenkins/agent
+
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /home/jenkins/agent
+
+
   # Jenkins Agent
   - name: jnlp
     image: jenkins/inbound-agent:latest
@@ -247,7 +260,7 @@ spec:
 
             steps {
 
-                container('jnlp') {
+                container('kubectl') {
 
                     sh '''
 
@@ -268,7 +281,7 @@ spec:
 
             steps {
 
-                container('jnlp') {
+                container('kubectl') {
 
                     sh '''
 
@@ -298,14 +311,14 @@ spec:
 
         success {
 
-            echo " CI/CD Pipeline Completed Successfully"
+            echo "✅ CI/CD Pipeline Completed Successfully"
 
         }
 
 
         failure {
 
-            echo "CI/CD Pipeline Failed"
+            echo "❌ CI/CD Pipeline Failed"
 
         }
 
