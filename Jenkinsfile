@@ -134,6 +134,16 @@ spec:
 
         }
 
+        stage('Update Kubernetes Image') {
+            steps {
+                container('kubectl') {
+                    withCredentials([file(credentialsId: 'minikube-kubeconfig', variable: 'KUBECONFIG')]) {
+                        sh "kubectl set image deployment/gen-ai-project gen-ai-project=navanee143/gen-ai-project:${BUILD_NUMBER} -n default"
+                        }
+                    }
+            }
+        }
+
 
         stage('Install Dependencies') {
 
