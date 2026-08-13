@@ -267,7 +267,7 @@ spec:
 
 
 
-        stage('Update Kubernetes Image') {
+        stage('Update Kubernetes Image123') {
 
             steps {
 
